@@ -1,79 +1,108 @@
-const { isObjectIdOrHexString } = require("mongoose");
-const books = require("../Model/book");
+const books = require("../Models/book");
 
 // Get all books
-const getAllBooks = (req, res) => {
-  res.json({ success: true, books });
+exports.getAllBooks = (req, res) => {
+  res.json({ books });
 };
 
 
-const getBookByISBN = (req, res) => {
-    const { isbn } = req.params;
-    const book = books.find(b => b.isbn === isbn);
+exports.getBookByISBN = (req, res) => {
+    const isbn = req.params.isbn; // Get ISBN from request params
+    const book = books[isbn]; // Find book by ISBN
   
-    if (!book) {
-      return res.status(404).json({ success: false, message: "Book not found" });
-    }
-  
-    res.json({ success: true, book });
-  };
-
-
-  // Controller to get books by author
-  const getBooksByAuthor = (req, res) => {
-    try {
-      const authorName = req.params.authorName;
-      const booksByAuthor = books.filter(book => book.author.toLowerCase() === authorName.toLowerCase());
-  
-      if (booksByAuthor.length === 0) {
-        return res.status(404).json({ message: 'No books found by this author' });
-      }
-  
-      return res.status(200).json({ success: true, books: booksByAuthor });
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Error retrieving books' });
+    if (book) {
+      res.json({
+        author: book.author,
+        title: book.title,
+        reviews: {}
+      });
+    } else {
+      res.status(404).json({ message: "Book not found" });
     }
   };
 
 
-  // Controller to get books by title
-const getBooksByTitle = (req, res) => {
-  try {
-    const title = req.params.title;
-    const booksByTitle = books.filter(book => book.title.toLowerCase().includes(title.toLowerCase()));
+  exports.getBooksByAuthor = (req, res) => {
+    const author = req.params.author; // Get author from request params
+  
+    // Filter books that match the given author
+    const booksByAuthor = Object.entries(books)
+      .filter(([isbn, book]) => book.author === author)
+      .map(([isbn, book]) => ({
+        isbn,
+        title: book.title,
+        reviews: {}
+      }));
+  
+    // Send response
+    res.json({ booksbyauthor: booksByAuthor });
+  };
+  
 
-    if (booksByTitle.length === 0) {
-      return res.status(404).json({ message: 'No books found with this title' });
+  exports.getBooksByTitle = (req, res) => {
+    const title = req.params.title; // Get title from request params
+    const booksByTitle = Object.entries(books)
+      .filter(([isbn, book]) => book.title === title)
+      .map(([isbn, book]) => ({
+        isbn,
+        title: book.title,
+        reviews: {}
+      }));
+  
+    // Send response
+    res.json({ booksbytitle: booksByTitle });
+  };
+
+
+
+exports.getBookReview = (req, res) => {
+    const isbn = req.params.isbn; // Get ISBN from request params
+  
+    // Check if the book exists
+    if (books[isbn]) {
+      res.json({});
+    } else {
+      res.status(404).json({ message: "Book not found" });
+    }
+  };
+
+
+
+  exports.addOrUpdateReview = (req, res) => {
+    const { isbn } = req.params; // Get ISBN from URL params
+    const review = req.query.review; // Get review from query parameters
+
+    if (!books[isbn]) {
+        return res.status(404).json({ message: "Book not found" });
     }
 
-    return res.status(200).json({ success: true, books: booksByTitle });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Error retrieving books' });
-  }
+    if (!review) {
+        return res.status(400).json({ message: "Review is required" });
+    }
+
+    books[isbn].reviews = review; // Store the review
+
+    res.json({ message: `The review for the book with ISBN ${isbn} has been added/updated.` });
 };
 
-// Controller to get a book review
-const getBookReview = (req, res) => {
-  try {
-    const { isbn } = req.params;
-    console.log(isbn);
-    
-    const book = books.find(b => b.isbn === isbn);
 
-    if (!book) {
-      return res.status(404).json({ message: "Book not found" });
+exports.deleteReview = (req, res) => {
+    const { isbn } = req.params; // Get ISBN from URL params
+
+    // Check if book exists
+    if (!books[isbn]) {
+        return res.status(404).json({ message: "Book not found" });
     }
 
-    if (!book.review) {
-      return res.status(404).json({ message: "No review available for this book" });
+    // Check if reviews exist for the book
+    if (!books[isbn].reviews || Object.keys(books[isbn].reviews).length === 0) {
+        return res.status(404).json({ message: `No reviews found for ISBN ${isbn}` });
     }
 
-    return res.status(200).json({ success: true, review: book.review });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Error retrieving book review' });
-  }
+    // Delete all reviews for the book
+    books[isbn].reviews = {};
+
+    res.json({ message: `Reviews for the ISBN ${isbn} deleted.` });
 };
-module.exports = { getAllBooks, getBookByISBN, getBooksByAuthor, getBooksByTitle, getBookReview};
+
+

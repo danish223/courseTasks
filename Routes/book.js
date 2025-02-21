@@ -1,18 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const { getAllBooks, getBookByISBN, getBooksByAuthor, getBooksByTitle, getBookReview } = require("../Controller/book");
+const bookController = require("../Controller/book");
 
-// Route to get all books
-router.get("/", getAllBooks);
+router.get("/books", bookController.getAllBooks);
 
-router.get("/:isbn", getBookByISBN);
+router.get("/books/:isbn", bookController.getBookByISBN);
 
-router.get('/books/author/:authorName', getBooksByAuthor);
+router.get("/books/author/:author", bookController.getBooksByAuthor);
 
-router.get('/books/title/:title', getBooksByTitle);
+router.get("/books/title/:title", bookController.getBooksByTitle);
 
-router.get('/books/:isbn/review', getBookReview);
+router.get("/books/:isbn/review", bookController.getBookReview);
 
+router.put("/books/review/:isbn", bookController.addOrUpdateReview);
+
+router.delete("/books/review/:isbn", bookController.deleteReview);
 
 
 

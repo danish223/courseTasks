@@ -1,16 +1,15 @@
 const express = require("express");
 const bookRoutes = require("./Routes/book");
-const userRoutes = require("./Routes/user");
+const authRoutes = require("./Routes/auth");
+
+
 const app = express();
-const PORT = 3000;
-
-// Middleware to parse JSON
 app.use(express.json());
+const PORT = 5000;
 
-// Book routes
-app.use("/books", bookRoutes);
-app.use("/user", userRoutes);
+app.use("/api", bookRoutes);
+app.use("/api/auth", authRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
